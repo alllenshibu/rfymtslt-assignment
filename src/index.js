@@ -15,7 +15,8 @@ app.use(
   })
 );
 
-// Configure body-parser to accept very large files. Without this, larger csv uploads will not work
+// Configure body-parser to accept very large files
+// Without this, larger csv uploads will fail
 app.use(
   bodyParser.json({
     limit: "100mb",
@@ -28,14 +29,13 @@ app.get("/", (req, res) => {
 
 app.get("/health", (req, res) => {
   try {
-    const healthcheck = {
+    return res.status(200).json({
       resource: "Mathongo API",
       uptime: process.uptime(),
       responseTime: process.hrtime(),
       message: "OK",
       timestamp: Date.now(),
-    };
-    return res.json(healthcheck);
+    });
   } catch (error) {
     return res.status(500).json({ error: err.message });
   }

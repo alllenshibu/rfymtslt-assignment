@@ -4,43 +4,17 @@ const Papa = require("papaparse");
 
 const prisma = require("../db");
 
-// const getAllUsers = async (req, res) => {
-//   try {
-//     let users = await prisma.user.findMany({
-//       include: {
-//         properties: {
-//           select: {
-//             value: true,
-//             customProperty: true,
-//           },
-//         },
-//       },
-//     });
-
-//     for (let i = 0; i < users.length; i++) {
-//       let userProperties = {};
-
-//       users[i].properties.forEach((property) => {
-//         userProperties[property.customProperty.name] = property.value;
-//       });
-
-//       users[i] = {
-//         name: users[i].name,
-//         email: users[i].email,
-//         ...userProperties,
-//       };
-//     }
-
-//     return res.json({ users });
-//   } catch (err) {
-//     console.error(err);
-//     return res.status(500).json({ error: err.message });
-//   }
-// };
-
 const addUsers = async (req, res) => {
   try {
     const { listId } = req.params;
+
+    const listExists = await prisma.list.findUnique({
+      where: { id: listId },
+    });
+
+    if (!listExists) {
+      return res.status(400).json({ error: "List does not exist" });
+    }
 
     // multer saves the file to the machine once it intercepts the request
     const file = fs.readFileSync(req.file.path);
@@ -60,18 +34,22 @@ const addUsers = async (req, res) => {
       },
     });
 
-    // Checking if the custom properties provided in the CSV file actually exists in the list
-    let propertyName = users[i];
-    if (propertyName !== "email" && propertyName !== "name") {
-      let propertyExists = await prisma.property.findFirst({
-        where: { title: propertyName, listId: listId },
-      });
+    if (users.length === 0) {
+      return res.status(400).json({ error: "CSV file is empty" });
+    }
 
-      if (!propertyExists) {
-        return res.status(400).json({
-          error:
-            "The custom properties provided in the CSV file does not exist in the list",
+    // Checking if the custom properties provided in the CSV file actually exists in the list
+    for (let property in users[0]) {
+      if (property !== "email" && property !== "name") {
+        let propertyExists = await prisma.property.findFirst({
+          where: { title: property },
         });
+
+        if (!propertyExists) {
+          return res.status(400).json({
+            error: `Property ${property} does not exist in the list`,
+          });
+        }
       }
     }
 
@@ -99,7 +77,7 @@ const addUsers = async (req, res) => {
 
       // Prevent duplicate users
       const userExists = await prisma.user.findFirst({
-        where: { email },
+        where: { email, listId },
       });
 
       if (userExists) {
@@ -148,7 +126,6 @@ const addUsers = async (req, res) => {
       );
     }
     return res.json({
-      usersAdded,
       usersFailed,
       numberOfUsersProvided,
       numberOfUsersAdded: usersAdded.length,
