@@ -37,7 +37,7 @@ app.get("/health", (req, res) => {
       timestamp: Date.now(),
     });
   } catch (error) {
-    return res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: "Something went wrong" });
   }
 });
 

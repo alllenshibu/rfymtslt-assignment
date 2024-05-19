@@ -3,6 +3,46 @@ const prisma = require("../db");
 const { sendMail } = require("../lib/mail");
 
 const MAIL_FROM = `Mathongo Backend Intern Assignment <${process.env.SMTP_USER}>`;
+const UNSUBSCRIBE_LINK = `${process.env.BASE_URL}/unsubscribe`;
+
+const unsubscribe = async (req, res) => {
+  try {
+    const { listId, userId } = req.params;
+
+    if (!userId) {
+      return res.status(400).json({ error: "Not allowed" });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: {
+        id: userId,
+        listId: listId,
+      },
+    });
+
+    if (!user) {
+      return res.status(400).json({ error: "Not allowed" });
+    }
+
+    // To prevent foreign key constraint violation
+    await prisma.userProperty.deleteMany({
+      where: {
+        userId,
+      },
+    });
+
+    await prisma.user.delete({
+      where: {
+        id: userId,
+      },
+    });
+
+    return res.status(200).json({ message: "Unsubscribed successfully" });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: "Something went wrong" });
+  }
+};
 
 const sendMailToList = async (req, res) => {
   try {
@@ -52,6 +92,7 @@ const sendMailToList = async (req, res) => {
       });
 
       users[i] = {
+        id: users[i].id,
         name: users[i].name,
         email: users[i].email,
         ...userProperties,
@@ -82,6 +123,10 @@ const sendMailToList = async (req, res) => {
         to: user.email,
         subject,
         text,
+        html: `<p>${text}</p>
+        <br>
+        <br>
+        <a href="${UNSUBSCRIBE_LINK}/${listId}/${user.id}">Unsubscribe</a>`,
       });
       usersSuccessfullySent.push(user.email);
     }
@@ -96,8 +141,8 @@ const sendMailToList = async (req, res) => {
     });
   } catch (err) {
     console.error(err);
-    return res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: "Something went wrong" });
   }
 };
 
-module.exports = { sendMailToList };
+module.exports = { unsubscribe, sendMailToList };

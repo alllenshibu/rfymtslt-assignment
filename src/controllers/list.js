@@ -7,7 +7,7 @@ const getAllLists = async (req, res) => {
     return res.json({ lists });
   } catch (err) {
     console.error(err);
-    return res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: "Something went wrong" });
   }
 };
 
@@ -78,7 +78,7 @@ const getListById = async (req, res) => {
     return res.json({ list });
   } catch (err) {
     console.error(err);
-    return res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: "Something went wrong" });
   }
 };
 
@@ -122,7 +122,7 @@ const createList = async (req, res) => {
     });
   } catch (err) {
     console.error(err);
-    return res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: "Something went wrong" });
   }
 };
 

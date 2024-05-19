@@ -3,7 +3,7 @@ const multer = require("multer");
 
 const { getAllLists, createList, getListById } = require("./controllers/list");
 const { addUsers } = require("./controllers/user");
-const { sendMailToList } = require("./controllers/mail");
+const { sendMailToList, unsubscribe } = require("./controllers/mail");
 const { authorize } = require("./middlewares/auth");
 
 const router = express.Router();
@@ -27,5 +27,7 @@ router.get("/lists/:listId", getListById);
 router.post("/lists/:listId/users", upload.single("users"), addUsers);
 
 router.post("/lists/:listId/mail", authorize, sendMailToList);
+
+router.get("/unsubscribe/:listId/:userId", unsubscribe);
 
 module.exports = router;
